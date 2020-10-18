@@ -73,9 +73,90 @@ export default createVercelHttpServerHandler(
 );
 ```
 
----
+Nest.js also relies on experimental TypeScript features. Follow these steps to enable them in Next.js.
+
+Install the required dependencies:
+
+`npm install @babel/plugin-transform-runtime babel-plugin-transform-typescript-metadata @babel/plugin-proposal-decorators @babel/plugin-proposal-class-properties`
+
+Don’t forget to install all of Next.js’ dependencies and dev dependencies and move relevant configuration and other files.
+
+Enable them with a `.babelrc` file:
+
+```json
+{
+  "presets": ["next/babel"],
+  "plugins": [
+    [
+      "@babel/plugin-transform-runtime",
+      {
+        "regenerator": true
+      }
+    ],
+    "babel-plugin-transform-typescript-metadata",
+    ["@babel/plugin-proposal-decorators", { "legacy": true }],
+    ["@babel/plugin-proposal-class-properties", { "loose": true }]
+  ]
+}
+```
+
+Edit the `tsconfig.json`:
+
+```json
+{
+  "compilerOptions": {
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "baseUrl": "./",
+
+    "target": "es5",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": false,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve"
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules"]
+}
+```
+
+Add the `tsconfig.build.json`;
+
+```json
+{
+  "extends": "./tsconfig.json",
+  "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
+}
+```
+
+### Serverless Configuration
 
 For additional configuration, read Vercel’s [docs](https://vercel.com/docs/configuration#project/functions).
+
+**vercel.json**
+
+```json
+{
+  "version": 2,
+  "scope": "fromtheexchange",
+  "functions": {
+    "src/pages/api/[...slug].ts": {
+      "memory": 3008,
+      "maxDuration": 60
+    }
+  }
+}
+```
+
+---
 
 **_That’s all folks! Feel free to check out the alternative guide below to learn about another implementation._**
 
