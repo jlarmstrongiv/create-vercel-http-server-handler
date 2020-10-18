@@ -21,7 +21,8 @@ export default function createVercelHttpServerHandler(
 ) {
   // https://vercel.com/docs/runtimes#official-runtimes/node-js/node-js-request-and-response-objects
   return async function handler(req: NowRequest, res: NowResponse) {
-    if (!cachedServer) await startServer(await bootstrap(), 0);
+    if (!cachedServer && process.env.NODE_ENV !== 'production')
+      await startServer(await bootstrap(), 0);
 
     // https://stackoverflow.com/a/61732185
     return new Promise(async (resolve, reject) => {
