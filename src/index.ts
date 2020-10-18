@@ -21,12 +21,12 @@ const start = async (app: http.Server, port: number): Promise<void> => {
 
 // currying, must be synchronous https://javascript.info/currying-partials
 export default function createVercelHttpServerHandler(
-  bootstrap: () => Promise<http.Server>
+  bootstrap: () => Promise<http.Server>,
+  enableCache: boolean
 ) {
   // https://vercel.com/docs/runtimes#official-runtimes/node-js/node-js-request-and-response-objects
   return async function handler(req: NowRequest, res: NowResponse) {
-    if (!cache && process.env.NODE_ENV !== 'production')
-      await start(await bootstrap(), 0);
+    if (!cache && enableCache) await start(await bootstrap(), 0);
 
     // https://stackoverflow.com/a/61732185
     return new Promise(async (resolve, reject) => {
