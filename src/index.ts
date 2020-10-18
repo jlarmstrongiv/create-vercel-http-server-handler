@@ -3,15 +3,17 @@ import { NowRequest, NowResponse } from '@vercel/node';
 import http from 'http';
 import https from 'https';
 import HttpProxy from 'http-proxy';
-const proxy = new HttpProxy();
 
 // https://stackoverflow.com/a/63629410
 let cachedServer: http.Server;
+let cachedProxy: HttpProxy;
+
 const startServer = async (app: http.Server, port: number): Promise<void> => {
   return new Promise((resolve, _reject) => {
     cachedServer = app.listen(port, () => {
       resolve();
     });
+    cachedProxy = new HttpProxy();
   });
 };
 
@@ -26,11 +28,11 @@ export default function createVercelHttpServerHandler(
 
     // https://stackoverflow.com/a/61732185
     return new Promise(async (resolve, reject) => {
-      proxy.on('proxyRes', function() {
+      cachedProxy.on('proxyRes', function() {
         resolve();
       });
 
-      proxy.on('error', function(_error, _req, res) {
+      cachedProxy.on('error', function(_error, _req, res) {
         res.writeHead(500, {
           'Content-Type': 'text/plain',
         });
@@ -45,7 +47,7 @@ export default function createVercelHttpServerHandler(
       const protocol = cachedServer instanceof https.Server ? 'https' : 'http';
       const serverAddress = protocol + '://127.0.0.1:' + port;
 
-      proxy.web(req, res, { target: serverAddress });
+      cachedProxy.web(req, res, { target: serverAddress });
     });
   };
 }
