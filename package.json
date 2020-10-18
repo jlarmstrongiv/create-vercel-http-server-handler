@@ -1,0 +1,46 @@
+{
+  "version": "0.0.0",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "engines": {
+    "node": ">=10"
+  },
+  "scripts": {
+    "start": "tsdx watch",
+    "build": "tsdx build",
+    "test": "tsdx test",
+    "lint": "tsdx lint",
+    "prepare": "tsdx build"
+  },
+  "peerDependencies": {},
+  "husky": {
+    "hooks": {
+      "pre-commit": "tsdx lint"
+    }
+  },
+  "prettier": {
+    "printWidth": 80,
+    "semi": true,
+    "singleQuote": true,
+    "trailingComma": "es5"
+  },
+  "name": "create-vercel-http-server-handler",
+  "author": "John L. Armstrong IV",
+  "module": "dist/create-vercel-http-server-handler.esm.js",
+  "devDependencies": {
+    "husky": "^4.3.0",
+    "tsdx": "^0.14.1",
+    "tslib": "^2.0.3",
+    "typescript": "^4.0.3"
+  },
+  "optionalDependencies": {
+    "@types/http-proxy": "^1.17.4",
+    "@vercel/node": "^1.8.4",
+    "http-proxy": "^1.18.1"
+  }
+}
