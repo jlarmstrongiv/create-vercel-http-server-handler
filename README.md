@@ -79,7 +79,7 @@ Install the required dependencies:
 
 `npm install @babel/plugin-transform-runtime babel-plugin-transform-typescript-metadata @babel/plugin-proposal-decorators @babel/plugin-proposal-class-properties`
 
-Don’t forget to install all of Next.js’ dependencies and dev dependencies and move relevant configuration and other files.
+Don’t forget to install all of Next.js’ dependencies and dev dependencies. Plus, move relevant configs and other files.
 
 Enable them with a `.babelrc` file:
 
