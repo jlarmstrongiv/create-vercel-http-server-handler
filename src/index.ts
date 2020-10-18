@@ -1,3 +1,4 @@
+import { AddressInfo } from 'net';
 import { NowRequest, NowResponse } from '@vercel/node';
 import http from 'http';
 import https from 'https';
@@ -35,7 +36,9 @@ export default function createVercelHttpServerHandler(app: http.Server) {
       });
 
       // https://github.com/visionmedia/supertest/blob/master/lib/test.js#L61
-      const port = server.address().port;
+
+      // https://stackoverflow.com/a/53749142
+      const port = (app.address() as AddressInfo).port;
       const protocol = server instanceof https.Server ? 'https' : 'http';
       const serverAddress = protocol + '://127.0.0.1:' + port;
 
