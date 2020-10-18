@@ -43,7 +43,6 @@ export default function createVercelHttpServerHandler(
       });
 
       // https://github.com/visionmedia/supertest/blob/master/lib/test.js#L61
-
       // https://stackoverflow.com/a/53749142
       const port = (cachedServer.address() as AddressInfo).port;
       const protocol = cachedServer instanceof https.Server ? 'https' : 'http';
