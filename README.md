@@ -146,7 +146,7 @@ For additional configuration, read Vercel’s [docs](https://vercel.com/docs/con
 ```json
 {
   "version": 2,
-  "scope": "fromtheexchange",
+  "scope": "your-scope",
   "functions": {
     "src/pages/api/[...slug].ts": {
       "memory": 3008,
