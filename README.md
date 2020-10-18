@@ -95,7 +95,7 @@ Vercel support has said:
 
 > You cannot configure the memory and timeout of your functions if you are opting-out of "Zero Config".
 
-Vercel Pro Plan users can only use a function with
+Vercel Pro Plan users can only use a function with:
 
 - Memory Size 1024 MB
 - Timeout 60s
@@ -241,7 +241,7 @@ Now, we can run our server on `@vercel/node` with automatic deployment.
 
 ### Footnotes
 
-† Please note that serverless in general does not scale well when directly connecting to a database like MongoDB or PostgreSQL, as they have limited connection pools that are used up when many lambdas are spun up. Similar concerns can be said about realtime web sockets. You should probably avoid serverless in these use cases. Instead, take a look at alternative scalable hosting solutions like [Google App Engine](https://cloud.google.com/appengine) with [cluster](https://www.npmjs.com/package/cluster).
+† Please note that serverless in general does not scale well when directly connecting to a database like MongoDB or PostgreSQL. These databases have limited connection pools that are exhausted when many lambdas are spun up. Similar concerns can be said about realtime web sockets. You should probably avoid serverless in these use cases. Instead, take a look at alternative scalable hosting solutions like [Google App Engine](https://cloud.google.com/appengine) with [cluster](https://www.npmjs.com/package/cluster).
 
 ## Thank you
 
