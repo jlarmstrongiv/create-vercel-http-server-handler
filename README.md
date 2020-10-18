@@ -245,7 +245,7 @@ Now, we can run our server on `@vercel/node` with automatic deployment.
 
 ## Thank you
 
-This package would not be possible without the help of:
+This package would not exist without the help of:
 
 - [TSDX](https://www.npmjs.com/package/tsdx)
 - [node-http-proxy](https://www.npmjs.com/package/http-proxy)
