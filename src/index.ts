@@ -27,7 +27,7 @@ export default function createVercelHttpServerHandler(app: http.Server) {
         resolve();
       });
 
-      proxy.on('error', function(error, req, res) {
+      proxy.on('error', function(_error, _req, res) {
         res.writeHead(500, {
           'Content-Type': 'text/plain',
         });
