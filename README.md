@@ -1,3 +1,31 @@
+# TODO
+
+- `npm install create-vercel-http-server-handler`
+- optional dependencies?
+
+How it works with express
+
+```ts
+async function bootstrap() {
+  return http.createServer(app);
+}
+```
+
+How it works with Nestjs
+
+```ts
+async function bootstrap() {
+  const expressApp = express();
+  const nestApp = await NestFactory.create(
+    AppModule,
+    new ExpressAdapter(expressApp)
+  );
+  nestApp.setGlobalPrefix('/api');
+  await nestApp.init();
+  return http.createServer(expressApp);
+}
+```
+
 # TSDX Bootstrap
 
 This project was bootstrapped with [TSDX](https://github.com/jaredpalmer/tsdx).
