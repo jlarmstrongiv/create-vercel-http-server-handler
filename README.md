@@ -3,27 +3,30 @@
 - `npm install create-vercel-http-server-handler`
 - optional dependencies?
 
+```js
+import {
+  createVercelHttpServerHandler,
+  bootstrapExpress,
+  bootstrapNest,
+} from 'createVercelHttpServerHandler';
+```
+
 How it works with express
 
 ```ts
-async function bootstrap() {
-  return http.createServer(app);
-}
+export default createVercelHttpServerHandler(
+  bootstrapExpress(app),
+  !!process.env.AWS_REGION
+);
 ```
 
 How it works with Nestjs
 
 ```ts
-async function bootstrap() {
-  const expressApp = express();
-  const nestApp = await NestFactory.create(
-    AppModule,
-    new ExpressAdapter(expressApp)
-  );
-  nestApp.setGlobalPrefix('/api');
-  await nestApp.init();
-  return http.createServer(expressApp);
-}
+export default createVercelHttpServerHandler(
+  bootstrapNest(AppModule, useGlobal),
+  !!process.env.AWS_REGION
+);
 ```
 
 # TSDX Bootstrap
