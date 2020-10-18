@@ -9,7 +9,7 @@ export function bootstrapNest(
   useGlobal?: (app: INestApplication) => void
 ) {
   return async function bootstrapNestHandler() {
-    console.log('[createVercelHttpServerHandler]: bootstrapNest');
+    // console.log('[createVercelHttpServerHandler]: bootstrapNest');
     const expressApp = express();
     const nestApp = await NestFactory.create(
       AppModule,

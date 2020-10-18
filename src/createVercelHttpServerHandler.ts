@@ -11,7 +11,7 @@ let cachedServer: http.Server;
 
 const start = async (app: http.Server, port: number): Promise<void> => {
   return new Promise((resolve, _reject) => {
-    console.log('[create-vercel-http-server-handler]: start');
+    // console.log('[create-vercel-http-server-handler]: start');
     cache = true;
     cachedProxy = new HttpProxy();
     cachedServer = app.listen(port, () => {
