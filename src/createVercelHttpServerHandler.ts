@@ -1,5 +1,5 @@
 import { AddressInfo } from 'net';
-import { NowRequest, NowResponse } from '@vercel/node';
+import { NextApiRequest, NextApiResponse } from 'next';
 import http from 'http';
 import https from 'https';
 import HttpProxy from 'http-proxy';
@@ -26,7 +26,7 @@ export function createVercelHttpServerHandler(
   enableCache: boolean
 ) {
   // https://vercel.com/docs/runtimes#official-runtimes/node-js/node-js-request-and-response-objects
-  return async function handler(req: NowRequest, res: NowResponse) {
+  return async function handler(req: NextApiRequest, res: NextApiResponse) {
     if (!cache || !enableCache) await start(await bootstrap(), 0);
 
     // https://stackoverflow.com/a/61732185

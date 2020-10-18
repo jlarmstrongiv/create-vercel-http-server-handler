@@ -77,9 +77,9 @@ Nest.js also relies on experimental TypeScript features. Follow these steps to e
 
 Install the required dependencies:
 
-`npm install @babel/plugin-transform-runtime babel-plugin-transform-typescript-metadata @babel/plugin-proposal-decorators @babel/plugin-proposal-class-properties`
+`npm install --save-dev @babel/plugin-transform-runtime babel-plugin-transform-typescript-metadata @babel/plugin-proposal-decorators @babel/plugin-proposal-class-properties`
 
-Don’t forget to install all of Next.js’ dependencies and dev dependencies. Plus, move relevant configs and other files.
+Don’t forget to install all of Next.js’ dependencies and dev dependencies. Plus, move relevant scripts, configs, and other files. Lastly, don’t forget to delete the listener in `main.ts` to avoid the `Error: listen EADDRINUSE: address already in use :::3000`.
 
 Enable them with a `.babelrc` file:
 
