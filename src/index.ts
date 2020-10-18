@@ -17,7 +17,7 @@ const startServer = async (app: http.Server, port: number): Promise<void> => {
 
 // currying, must be synchronous https://javascript.info/currying-partials
 export default function createVercelHttpServerHandler(
-  bootstrap: () => http.Server
+  bootstrap: () => Promise<http.Server>
 ) {
   // https://vercel.com/docs/runtimes#official-runtimes/node-js/node-js-request-and-response-objects
   return async function handler(req: NowRequest, res: NowResponse) {
@@ -40,7 +40,7 @@ export default function createVercelHttpServerHandler(
       // https://github.com/visionmedia/supertest/blob/master/lib/test.js#L61
 
       // https://stackoverflow.com/a/53749142
-      const port = (app.address() as AddressInfo).port;
+      const port = (server.address() as AddressInfo).port;
       const protocol = server instanceof https.Server ? 'https' : 'http';
       const serverAddress = protocol + '://127.0.0.1:' + port;
 
