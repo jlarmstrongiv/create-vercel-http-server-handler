@@ -5,11 +5,13 @@ import https from 'https';
 import HttpProxy from 'http-proxy';
 
 // https://stackoverflow.com/a/63629410
+let cache = false;
 let cachedServer: http.Server;
 let cachedProxy: HttpProxy;
 
-const startServer = async (app: http.Server, port: number): Promise<void> => {
+const start = async (app: http.Server, port: number): Promise<void> => {
   return new Promise((resolve, _reject) => {
+    cache = true;
     cachedServer = app.listen(port, () => {
       resolve();
     });
@@ -23,8 +25,8 @@ export default function createVercelHttpServerHandler(
 ) {
   // https://vercel.com/docs/runtimes#official-runtimes/node-js/node-js-request-and-response-objects
   return async function handler(req: NowRequest, res: NowResponse) {
-    if (!cachedServer && process.env.NODE_ENV !== 'production')
-      await startServer(await bootstrap(), 0);
+    if (!cache && process.env.NODE_ENV !== 'production')
+      await start(await bootstrap(), 0);
 
     // https://stackoverflow.com/a/61732185
     return new Promise(async (resolve, reject) => {
