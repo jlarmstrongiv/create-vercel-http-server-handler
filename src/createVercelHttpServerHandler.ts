@@ -3,6 +3,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import http from 'http';
 import https from 'https';
 import HttpProxy from 'http-proxy';
+import getRawBody from 'raw-body';
 
 // https://stackoverflow.com/a/63629410
 let cache = false;
@@ -31,6 +32,17 @@ export function createVercelHttpServerHandler(
 
     // https://stackoverflow.com/a/61732185
     return new Promise(async (resolve, reject) => {
+      const rawBody = await getRawBody(req);
+
+      cachedProxy.on('proxyReq', function(proxyReq) {
+        // https://gist.github.com/NickNaso/96aaad34e305823b9ff6ba3909908f31
+        // https://github.com/http-party/node-http-proxy/issues/1471#issuecomment-683484691
+        // https://github.com/http-party/node-http-proxy/issues/1279#issuecomment-429378935
+        // https://github.com/http-party/node-http-proxy/issues/1142#issuecomment-282810543
+        proxyReq.setHeader('content-length', Buffer.byteLength(rawBody));
+        proxyReq.write(rawBody);
+      });
+
       cachedProxy.on('proxyRes', function() {
         resolve();
       });

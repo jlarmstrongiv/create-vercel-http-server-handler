@@ -21,7 +21,7 @@ The main drawback† is a slightly longer coldstart time when initializing the f
 This quickstart assumes you bootstraped your function with `npx create-next-app project-name`. However, this package should work with any [Zero Config Deployments](https://vercel.com/blog/zero-config).
 
 Install both this package and node-http-proxy via [npm](https://www.npmjs.com/package/create-vercel-http-server-handler),
-`npm install create-vercel-http-server-handler http-proxy`
+`npm install create-vercel-http-server-handler`
 
 Be sure you have installed the dependencies of your framework in your project, as this package relies on them.
 
@@ -50,6 +50,12 @@ export default createVercelHttpServerHandler(
   bootstrapExpress(app),
   !!process.env.AWS_REGION
 );
+
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
 ```
 
 **Nest.js**
@@ -59,7 +65,7 @@ This package expects you to use the default [`@nestjs/platform-express`](https:/
 Optionally, create a `useGlobal` function for Nest.js to apply any global prefixes, pipes, filters, guards, and interceptors. Because Next.js api routes are all prefixed with `/api`, we recommend you do the same.
 
 ```ts
-export function useGlobal(app: INestApplication) {
+export async function useGlobal(app: INestApplication) {
   app.setGlobalPrefix('/api');
 }
 ```
@@ -71,6 +77,12 @@ export default createVercelHttpServerHandler(
   bootstrapNest(AppModule, useGlobal),
   !!process.env.AWS_REGION
 );
+
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
 ```
 
 Nest.js also relies on experimental TypeScript features. Follow these steps to enable them in Next.js.

@@ -6,7 +6,7 @@ import { ExpressAdapter } from '@nestjs/platform-express';
 
 export function bootstrapNest(
   AppModule: any,
-  useGlobal?: (app: INestApplication) => void
+  useGlobal?: (app: INestApplication) => Promise<void>
 ) {
   return async function bootstrapNestHandler() {
     // console.log('[createVercelHttpServerHandler]: bootstrapNest');
@@ -16,7 +16,7 @@ export function bootstrapNest(
       new ExpressAdapter(expressApp)
     );
     // eslint-disable-next-line react-hooks/rules-of-hooks
-    if (useGlobal) useGlobal(nestApp);
+    if (useGlobal) await useGlobal(nestApp);
     await nestApp.init();
     return http.createServer(expressApp);
   };
