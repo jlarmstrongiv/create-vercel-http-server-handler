@@ -16,7 +16,7 @@ const start = async (
   bootstrap: () => Promise<http.Server>,
   enableCache?: boolean
 ): Promise<void> => {
-  return new Promise<void>(async (resolve, reject) => {
+  return new Promise<void>(async (resolve, _reject) => {
     if (cache && enableCache) resolve();
 
     // console.log('[create-vercel-http-server-handler]: start');
@@ -27,7 +27,7 @@ const start = async (
       cachedServerAddress =
         cachedServer instanceof https.Server
           ? 'https'
-          : 'http' + '://127.0.0.1:' + port;
+          : 'http' + '://127.0.0.1:' + cachedPort;
       resolve();
     });
   });
@@ -45,7 +45,7 @@ export function createVercelHttpServerHandler(
       start(bootstrap, enableCache),
     ]);
     // https://stackoverflow.com/a/61732185
-    return new Promise(async (resolve, reject) => {
+    return new Promise(async (resolve, _reject) => {
       const cachedProxy = new HttpProxy();
 
       cachedProxy.on('proxyReq', function(proxyReq) {
@@ -61,7 +61,7 @@ export function createVercelHttpServerHandler(
         resolve();
       });
 
-      cachedProxy.on('error', function(_error, _req, res) {
+      cachedProxy.on('error', function(_error, _req, _res) {
         console.log(_error);
         resolve();
       });
