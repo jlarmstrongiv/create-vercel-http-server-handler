@@ -1,21 +1,33 @@
-import { AddressInfo } from 'net';
 import { NextApiRequest, NextApiResponse } from 'next';
 import http from 'http';
 import https from 'https';
 import HttpProxy from 'http-proxy';
 import getRawBody from 'raw-body';
+import getPort from 'get-port';
+
+// https://www.jeremydaly.com/reuse-database-connections-aws-lambda/
+let cache = false;
+let cachedPort: number;
+let cachedServer: http.Server;
+let cachedServerAddress: string;
 
 // https://stackoverflow.com/a/63629410
-let cache = false;
-let cachedProxy: HttpProxy;
-let cachedServer: http.Server;
+const start = async (
+  bootstrap: () => Promise<http.Server>,
+  enableCache?: boolean
+): Promise<void> => {
+  return new Promise<void>(async (resolve, reject) => {
+    if (cache && enableCache) resolve();
 
-const start = async (app: http.Server, port: number): Promise<void> => {
-  return new Promise((resolve, _reject) => {
     // console.log('[create-vercel-http-server-handler]: start');
+    const [port, app] = await Promise.all([getPort(), bootstrap()]);
     cache = true;
-    cachedProxy = new HttpProxy();
+    cachedPort = port;
     cachedServer = app.listen(port, () => {
+      cachedServerAddress =
+        cachedServer instanceof https.Server
+          ? 'https'
+          : 'http' + '://127.0.0.1:' + port;
       resolve();
     });
   });
@@ -28,11 +40,13 @@ export function createVercelHttpServerHandler(
 ) {
   // https://vercel.com/docs/runtimes#official-runtimes/node-js/node-js-request-and-response-objects
   return async function handler(req: NextApiRequest, res: NextApiResponse) {
-    if (!cache || !enableCache) await start(await bootstrap(), 0);
-
+    const [rawBody] = await Promise.all([
+      getRawBody(req),
+      start(bootstrap, enableCache),
+    ]);
     // https://stackoverflow.com/a/61732185
     return new Promise(async (resolve, reject) => {
-      const rawBody = await getRawBody(req);
+      const cachedProxy = new HttpProxy();
 
       cachedProxy.on('proxyReq', function(proxyReq) {
         // https://gist.github.com/NickNaso/96aaad34e305823b9ff6ba3909908f31
@@ -48,20 +62,11 @@ export function createVercelHttpServerHandler(
       });
 
       cachedProxy.on('error', function(_error, _req, res) {
-        res.writeHead(500, {
-          'Content-Type': 'text/plain',
-        });
-        res.end('[createVercelHttpServerHandler]: Something went wrong.');
-        reject('[createVercelHttpServerHandler]: Something went wrong.');
+        console.log(_error);
+        resolve();
       });
 
-      // https://github.com/visionmedia/supertest/blob/master/lib/test.js#L61
-      // https://stackoverflow.com/a/53749142
-      const port = (cachedServer.address() as AddressInfo).port;
-      const protocol = cachedServer instanceof https.Server ? 'https' : 'http';
-      const serverAddress = protocol + '://127.0.0.1:' + port;
-
-      cachedProxy.web(req, res, { target: serverAddress });
+      cachedProxy.web(req, res, { target: cachedServerAddress });
     });
   };
 }
