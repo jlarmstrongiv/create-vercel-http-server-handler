@@ -20,7 +20,7 @@ The main drawback† is a slightly longer coldstart time when initializing the f
 
 This quickstart assumes you bootstraped your function with `npx create-next-app project-name`. However, this package should work with any [Zero Config Deployments](https://vercel.com/blog/zero-config).
 
-Install both this package and node-http-proxy via [npm](https://www.npmjs.com/package/create-vercel-http-server-handler),
+Install this package via [npm](https://www.npmjs.com/package/create-vercel-http-server-handler),
 `npm install create-vercel-http-server-handler`
 
 Be sure you have installed the dependencies of your framework in your project, as this package relies on them.
