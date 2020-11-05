@@ -48,9 +48,9 @@ const start = async (config: Config): Promise<void> => {
     cachedAppType = type;
     cachedServer = server.listen(port, () => {
       cachedServerAddress =
-        cachedServer instanceof https.Server
-          ? 'https'
-          : 'http' + '://127.0.0.1:' + cachedPort;
+        (cachedServer instanceof https.Server ? 'https' : 'http') +
+        '://127.0.0.1:' +
+        cachedPort;
       resolve();
     });
   });
