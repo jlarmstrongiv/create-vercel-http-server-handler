@@ -3,7 +3,7 @@
   "author": "John L. Armstrong IV",
   "module": "dist/create-vercel-http-server-handler.esm.js",
   "repository": "git@github.com:jlarmstrongiv/create-vercel-http-server-handler.git",
-  "version": "0.0.15",
+  "version": "0.0.16",
   "license": "MIT",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
