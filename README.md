@@ -191,7 +191,17 @@ Add the `tsconfig.nest.json` for Nest.js:
 }
 ```
 
-Don’t forget to install all of Nest.js’ dependencies and dev dependencies. Plus, move relevant scripts, configs, .gitignores, and other files. Consider moving all the server files into `src/server/*` and moving the `main.ts` into `src/main.ts`.
+Don’t forget to install all of Nest.js’ dependencies and dev dependencies. Plus, move relevant scripts, configs, .gitignores, and other files. Consider moving all the server files into `src/server/*` and moving the `main.ts` into `src/main.ts`. Update the `nest-cli.json` to reflect the new organization:
+
+```json
+{
+  "collection": "@nestjs/schematics",
+  "sourceRoot": "src/server",
+  "compilerOptions": {
+    "plugins": ["@nestjs/graphql/plugin"]
+  }
+}
+```
 
 Finally, update the scripts inside the `package.json` and install the required script dependencies:
 
@@ -208,6 +218,29 @@ Finally, update the scripts inside the `package.json` and install the required s
     "dev:nest:wait": "wait-on tcp:5000"
   }
 }
+```
+
+If you are using graphql, customize the webpack config in `next.config.js`:
+
+```js
+module.exports = {
+  webpack: (config, options) => {
+    const tsLoader = {
+      test: /\.tsx?$/,
+      loader: 'ts-loader',
+      options: {
+        transpileOnly: true,
+        getCustomTransformers: program => ({
+          before: [require('@nestjs/graphql/plugin').before({}, program)],
+        }),
+      },
+      exclude: /node_modules/,
+    };
+    config.module.rules.push(tsLoader);
+
+    return config;
+  },
+};
 ```
 
 ### Serverless Configuration
