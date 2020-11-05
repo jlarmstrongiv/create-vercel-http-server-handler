@@ -220,24 +220,25 @@ Finally, update the scripts inside the `package.json` and install the required s
 }
 ```
 
-If you are using graphql, customize the webpack config in `next.config.js`:
+If you are using graphql, customize the webpack config in `next.config.js` and `npm install --save-dev ts-loader`:
 
 ```js
 module.exports = {
-  webpack: (config, options) => {
-    const tsLoader = {
-      test: /\.tsx?$/,
-      loader: 'ts-loader',
-      options: {
-        transpileOnly: true,
-        getCustomTransformers: program => ({
-          before: [require('@nestjs/graphql/plugin').before({}, program)],
-        }),
-      },
-      exclude: /node_modules/,
-    };
-    config.module.rules.push(tsLoader);
-
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      const tsLoader = {
+        test: /\.tsx?$/,
+        loader: 'ts-loader',
+        options: {
+          transpileOnly: true,
+          getCustomTransformers: program => ({
+            before: [require('@nestjs/graphql/plugin').before({}, program)],
+          }),
+        },
+        exclude: /node_modules/,
+      };
+      config.module.rules.push(tsLoader);
+    }
     return config;
   },
 };
