@@ -41,15 +41,14 @@ import {
 } from 'create-vercel-http-server-handler';
 ```
 
-And export default the handler helper for your framework of choice.
+Export default the handler helper for your framework of choice, and disable the bodyParser.
 
 **Express.js**
 
 ```ts
-export default createVercelHttpServerHandler(
-  bootstrapExpress(app),
-  !!process.env.AWS_REGION
-);
+export default createVercelHttpServerHandler({
+  bootstrap: bootstrapExpress({ app }),
+});
 
 export const config = {
   api: {
@@ -60,23 +59,52 @@ export const config = {
 
 **Nest.js**
 
-This package expects you to use the default [`@nestjs/platform-express`](https://www.npmjs.com/package/@nestjs/platform-express) under the hood. It will not work with [`@nestjs/platform-fastify`](https://www.npmjs.com/package/@nestjs/platform-fastify).
+This package expects you to use the default [`@nestjs/platform-express`](https://www.npmjs.com/package/@nestjs/platform-express) under the hood. It will not work with [`@nestjs/platform-fastify`](https://www.npmjs.com/package/@nestjs/platform-fastify). Check out the example on [github](https://github.com/jlarmstrongiv/next-with-nest-graphql).
 
-Optionally, create a `useGlobal` function for Nest.js to apply any global prefixes, pipes, filters, guards, and interceptors. Because Next.js api routes are all prefixed with `/api`, we recommend you do the same.
+Optionally, create a `useGlobal` function for Nest.js to apply any global prefixes, pipes, filters, guards, and interceptors. Because Next.js api routes are all prefixed with `/api`, we recommend you do the same. Only start the server when invoked by the Nest.js CLI. Here is an example `src/main.ts`:
 
 ```ts
+import { NestFactory } from '@nestjs/core';
+import { INestApplication, NestApplicationOptions } from '@nestjs/common';
+import { AppModule } from './server/app/app.module';
+
+export const nestApplicationOptions: NestApplicationOptions = {
+  logger: false,
+};
+
 export async function useGlobal(app: INestApplication) {
   app.setGlobalPrefix('/api');
 }
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  await useGlobal(app);
+  await app.listen(Number(process.env.NEST_PORT) || 3000);
+}
+if (process.env.CLI === 'NEST') {
+  bootstrap();
+}
 ```
 
-Pass your `AppModule` and optional `useGlobal` function to the `bootstrapNest` helper function.
+Pass your `AppModule` and optional `useGlobal` function to the `bootstrapNest` helper function inside your `[...slug].ts` api route.
 
 ```ts
-export default createVercelHttpServerHandler(
-  bootstrapNest(AppModule, useGlobal),
-  !!process.env.AWS_REGION
-);
+import {
+  createVercelHttpServerHandler,
+  bootstrapNest,
+} from 'create-vercel-http-server-handler';
+import { AppModule } from '../../server/app/app.module';
+import { useGlobal, nestApplicationOptions } from '../../main';
+
+export default createVercelHttpServerHandler({
+  bootstrap: bootstrapNest({
+    AppModule,
+    useGlobal,
+    nestApplicationOptions,
+  }),
+  NODE_ENV: process.env.NODE_ENV,
+  NEST_PORT: Number(process.env.NEST_PORT),
+});
 
 export const config = {
   api: {
@@ -85,15 +113,11 @@ export const config = {
 };
 ```
 
-Nest.js also relies on experimental TypeScript features. Follow these steps to enable them in Next.js.
-
-Install the required dependencies:
+Nest.js also relies on experimental TypeScript features. Install the required dependencies:
 
 `npm install --save-dev @babel/plugin-transform-runtime babel-plugin-transform-typescript-metadata @babel/plugin-proposal-decorators @babel/plugin-proposal-class-properties`
 
-Don’t forget to install all of Next.js’ dependencies and dev dependencies. Plus, move relevant scripts, configs, and other files. Lastly, don’t forget to delete the listener in `main.ts` to avoid the `Error: listen EADDRINUSE: address already in use :::3000`.
-
-Enable them with a `.babelrc` file:
+Enable the experimental TypeScript features with a `.babelrc` file:
 
 ```json
 {
@@ -112,7 +136,7 @@ Enable them with a `.babelrc` file:
 }
 ```
 
-Edit the `tsconfig.json`:
+Edit the `tsconfig.json` for Next.js:
 
 ```json
 {
@@ -140,12 +164,49 @@ Edit the `tsconfig.json`:
 }
 ```
 
-Add the `tsconfig.build.json`;
+Add the `tsconfig.nest.json` for Nest.js:
 
 ```json
 {
-  "extends": "./tsconfig.json",
-  "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
+  "compilerOptions": {
+    "forceConsistentCasingInFileNames": true,
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+
+    "module": "commonjs",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "es2017",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "incremental": true
+  },
+  "exclude": ["node_modules", "dist", ".next", ".vercel"]
+}
+```
+
+Don’t forget to install all of Nest.js’ dependencies and dev dependencies. Plus, move relevant scripts, configs, .gitignores, and other files. Consider moving all the server files into `src/server/*` and moving the `main.ts` into `src/main.ts`.
+
+Finally, update the scripts inside the `package.json` and install the required script dependencies:
+
+`npm install --save-dev npm-run-all cross-env wait-on`
+
+```json
+{
+  "scripts": {
+    "predev": "rimraf dist",
+    "dev": "npm-run-all -p -r dev:nest dev:next:wait",
+    "dev:next": "cross-env NEST_PORT=5000 next dev",
+    "dev:next:wait": "npm-run-all -s dev:nest:wait dev:next",
+    "dev:nest": "cross-env NEST_PORT=5000 CLI=NEST nest start --path ./tsconfig.nest.json --watch --preserveWatchOutput",
+    "dev:nest:wait": "wait-on tcp:5000"
+  }
 }
 ```
 
