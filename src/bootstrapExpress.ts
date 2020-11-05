@@ -1,9 +1,16 @@
 import http from 'http';
-import express from 'express';
+import { Express } from 'express';
 
-export function bootstrapExpress(app: express.Express) {
+export interface BootstrapExpressOptions {
+  app: Express;
+}
+export function bootstrapExpress({ app }: BootstrapExpressOptions) {
   return async function bootstrapExpressHandler() {
     // console.log('[createVercelHttpServerHandler]: bootstrapExpress');
-    return http.createServer(app);
+    return {
+      server: http.createServer(app),
+      app,
+      type: 'EXPRESS',
+    };
   };
 }

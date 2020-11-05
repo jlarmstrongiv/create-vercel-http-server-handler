@@ -4,26 +4,49 @@ import https from 'https';
 import HttpProxy from 'http-proxy';
 import getRawBody from 'raw-body';
 import getPort from 'get-port';
+import waitOn from 'wait-on';
+
+import { Express } from 'express';
+import { INestApplication } from '@nestjs/common';
 
 // https://www.jeremydaly.com/reuse-database-connections-aws-lambda/
 let cache = false;
-let cachedPort: number;
-let cachedServer: http.Server;
-let cachedServerAddress: string;
+let cachedPort: number | undefined;
+let cachedApp: INestApplication | Express | undefined;
+let cachedAppType: string | undefined;
+let cachedServer: http.Server | undefined;
+let cachedServerAddress: string | undefined;
 
+interface Config {
+  bootstrap: () => Promise<{
+    server: http.Server;
+    app: INestApplication | Express;
+    type: string;
+  }>;
+  enableCache?: boolean;
+  NODE_ENV?: string;
+  NEST_PORT?: number;
+}
 // https://stackoverflow.com/a/63629410
-const start = async (
-  bootstrap: () => Promise<http.Server>,
-  enableCache?: boolean
-): Promise<void> => {
+const start = async (config: Config): Promise<void> => {
   return new Promise<void>(async (resolve, _reject) => {
-    if (cache && enableCache) resolve();
+    if (cache && config.enableCache) return resolve();
 
-    // console.log('[create-vercel-http-server-handler]: start');
-    const [port, app] = await Promise.all([getPort(), bootstrap()]);
+    if (config.NODE_ENV === 'development' && config.NEST_PORT) {
+      cache = true;
+      cachedServerAddress = `http://localhost:${config.NEST_PORT}`;
+      return resolve();
+    }
+
+    const [port, { server, app, type }] = await Promise.all([
+      getPort(),
+      config.bootstrap(),
+    ]);
     cache = true;
     cachedPort = port;
-    cachedServer = app.listen(port, () => {
+    cachedApp = app;
+    cachedAppType = type;
+    cachedServer = server.listen(port, () => {
       cachedServerAddress =
         cachedServer instanceof https.Server
           ? 'https'
@@ -34,16 +57,13 @@ const start = async (
 };
 
 // currying, must be synchronous https://javascript.info/currying-partials
-export function createVercelHttpServerHandler(
-  bootstrap: () => Promise<http.Server>,
-  enableCache: boolean
-) {
+export function createVercelHttpServerHandler(config: Config) {
+  // default enableCache to true
+  if (config.enableCache === undefined) config.enableCache = true;
+
   // https://vercel.com/docs/runtimes#official-runtimes/node-js/node-js-request-and-response-objects
   return async function handler(req: NextApiRequest, res: NextApiResponse) {
-    const [rawBody] = await Promise.all([
-      getRawBody(req),
-      start(bootstrap, enableCache),
-    ]);
+    const [rawBody] = await Promise.all([getRawBody(req), start(config)]);
     // https://stackoverflow.com/a/61732185
     return new Promise(async (resolve, _reject) => {
       const cachedProxy = new HttpProxy();
@@ -57,7 +77,29 @@ export function createVercelHttpServerHandler(
         proxyReq.write(rawBody);
       });
 
-      cachedProxy.on('proxyRes', function() {
+      cachedProxy.on('proxyRes', async function() {
+        // https://stackoverflow.com/a/56835387
+        if (!config.enableCache && cache) {
+          // close server
+          if (cachedServer) {
+            await new Promise((resolve, reject) =>
+              cachedServer!.close(() => {
+                resolve();
+              })
+            );
+          }
+          // call shutdown hooks
+          if (cachedAppType === 'NEST' && cachedApp) {
+            await (cachedApp as INestApplication).close();
+          }
+          // clear cache
+          cache = false;
+          cachedPort = undefined;
+          cachedApp = undefined;
+          cachedAppType = undefined;
+          cachedServer = undefined;
+          cachedServerAddress = undefined;
+        }
         resolve();
       });
 
@@ -66,7 +108,15 @@ export function createVercelHttpServerHandler(
         resolve();
       });
 
-      cachedProxy.web(req, res, { target: cachedServerAddress });
+      if (config.NEST_PORT) {
+        await waitOn({
+          resources: [`tcp:${config.NEST_PORT}`],
+        });
+      }
+
+      cachedProxy.web(req, res, {
+        target: cachedServerAddress,
+      });
     });
   };
 }
