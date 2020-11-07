@@ -160,7 +160,7 @@ Edit the `tsconfig.json` for Next.js:
     "jsx": "preserve"
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "dist", ".next", ".vercel", "scripts"]
 }
 ```
 
@@ -187,7 +187,8 @@ Add the `tsconfig.nest.json` for Nest.js:
     "baseUrl": "./",
     "incremental": true
   },
-  "exclude": ["node_modules", "dist", ".next", ".vercel"]
+  // https://stackoverflow.com/a/60688322
+  "exclude": ["node_modules", "dist", ".next", ".vercel", "scripts"]
 }
 ```
 
@@ -242,6 +243,35 @@ module.exports = {
     return config;
   },
 };
+```
+
+If you are creating custom scripts, you will need another `tsconfig.scripts.json`:
+
+```json
+{
+  "compilerOptions": {
+    "noEmit": true,
+
+    "forceConsistentCasingInFileNames": true,
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+
+    "module": "commonjs",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "es2017",
+    "sourceMap": true,
+    "baseUrl": "./",
+    "incremental": true
+  },
+  // https://stackoverflow.com/a/60688322
+  "exclude": ["node_modules", "dist", ".next", ".vercel"]
+}
 ```
 
 ### Serverless Configuration
