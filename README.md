@@ -187,7 +187,6 @@ Add the `tsconfig.nest.json` for Nest.js:
     "baseUrl": "./",
     "incremental": true
   },
-  // https://stackoverflow.com/a/60688322
   "exclude": ["node_modules", "dist", ".next", ".vercel", "scripts"]
 }
 ```
@@ -269,7 +268,6 @@ If you are creating custom scripts, you will need another `tsconfig.scripts.json
     "baseUrl": "./",
     "incremental": true
   },
-  // https://stackoverflow.com/a/60688322
   "exclude": ["node_modules", "dist", ".next", ".vercel"]
 }
 ```
