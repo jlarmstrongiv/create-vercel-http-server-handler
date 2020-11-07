@@ -61,6 +61,8 @@ export const config = {
 
 This package expects you to use the default [`@nestjs/platform-express`](https://www.npmjs.com/package/@nestjs/platform-express) under the hood. It will not work with [`@nestjs/platform-fastify`](https://www.npmjs.com/package/@nestjs/platform-fastify). Check out the example on [github](https://github.com/jlarmstrongiv/next-with-nest-graphql).
 
+When using typescript, don’t forget to `npm install --save-dev typescript @types/react @types/node`
+
 Optionally, create a `useGlobal` function for Nest.js to apply any global prefixes, pipes, filters, guards, and interceptors. Because Next.js api routes are all prefixed with `/api`, we recommend you do the same. Only start the server when invoked by the Nest.js CLI. Here is an example `src/main.ts`:
 
 ```ts
@@ -191,7 +193,13 @@ Add the `tsconfig.nest.json` for Nest.js:
 }
 ```
 
-Don’t forget to install all of Nest.js’ dependencies and dev dependencies. Plus, move relevant scripts, configs, .gitignores, and other files. Consider moving all the server files into `src/server/*` and moving the `main.ts` into `src/main.ts`. Update the `nest-cli.json` to reflect the new organization:
+Don’t forget to install all of Nest.js’ dependencies and dev dependencies. Plus, move relevant scripts, configs, .gitignores, and other files. Consider moving all the server files into `src/server/*` and moving the `main.ts` into `src/main.ts`.
+
+`npm install @nestjs/common @nestjs/core @nestjs/platform-express reflect-metadata rimraf rxjs`
+
+`npm install --save-dev @nestjs/cli @nestjs/schematics @nestjs/testing @types/express @types/jest @types/node @types/supertest @typescript-eslint/eslint-plugin @typescript-eslint/parser eslint eslint-config-prettier eslint-plugin-import jest prettier supertest ts-jest ts-loader ts-node tsconfig-paths typescript`
+
+Update the `nest-cli.json` to reflect the new organization:
 
 ```json
 {
@@ -212,10 +220,25 @@ Finally, update the scripts inside the `package.json` and install the required s
   "scripts": {
     "predev": "rimraf dist",
     "dev": "npm-run-all -p -r dev:nest dev:next:wait",
-    "dev:next": "cross-env NEST_PORT=5000 next dev",
+    "dev:next": "cross-env NEST_PORT=7000 next dev -p 8000",
     "dev:next:wait": "npm-run-all -s dev:nest:wait dev:next",
-    "dev:nest": "cross-env NEST_PORT=5000 CLI=NEST nest start --path ./tsconfig.nest.json --watch --preserveWatchOutput",
-    "dev:nest:wait": "wait-on tcp:5000"
+    "dev:nest": "cross-env NEST_PORT=7000 CLI=NEST nest start --path ./tsconfig.nest.json --watch --preserveWatchOutput",
+    "dev:nest:wait": "wait-on tcp:7000",
+    "preprebuild": "rimraf dist",
+    "prebuild": "npm run build:nest",
+    "build": "npm run build:next",
+    "build:next": "next build",
+    "build:nest": "cross-env NODE_ENV=production nest build --path ./tsconfig.nest.json",
+    "start": "npm run start:next",
+    "start:next": "next start -p 8000",
+    "start:nest": "cross-env CLI=NEST NEST_PORT=7000 nest start --path ./tsconfig.nest.json",
+    "start:nest:prod": "cross-env CLI=NEST NEST_PORT=7000 node dist/main",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage",
+    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+    "test:e2e": "jest --config ./test/jest-e2e.json"
   }
 }
 ```
