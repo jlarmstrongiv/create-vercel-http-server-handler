@@ -85,10 +85,13 @@ export function createVercelHttpServerHandler(config: Config) {
           if (!config.enableCache && cache) {
             // close server
             if (cachedServer) {
-              await new Promise((resolve, _reject) =>
-                cachedServer!.close(() => {
-                  resolve(undefined);
-                })
+              await new Promise(
+                async (resolve, reject): Promise<void> => {
+                  cachedServer!.close(error => {
+                    if (error) return reject(error);
+                    return resolve(undefined);
+                  });
+                }
               );
             }
             // call shutdown hooks
@@ -103,12 +106,12 @@ export function createVercelHttpServerHandler(config: Config) {
             cachedServer = undefined;
             cachedServerAddress = undefined;
           }
-          resolve(undefined);
+          resolve();
         });
 
         cachedProxy.on('error', function(error, _req, _res) {
           console.log(error);
-          resolve(undefined);
+          resolve();
         });
 
         if (config.NEST_PORT) {
