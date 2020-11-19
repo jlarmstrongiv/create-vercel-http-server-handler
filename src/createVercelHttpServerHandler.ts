@@ -58,65 +58,69 @@ const start = async (config: Config): Promise<void> => {
 
 // currying, must be synchronous https://javascript.info/currying-partials
 export function createVercelHttpServerHandler(config: Config) {
-  // default enableCache to true
-  if (config.enableCache === undefined) config.enableCache = true;
+  config.enableCache ?? (config.enableCache = true);
 
   // https://vercel.com/docs/runtimes#official-runtimes/node-js/node-js-request-and-response-objects
-  return async function handler(req: NextApiRequest, res: NextApiResponse) {
+  return async function handler(
+    req: NextApiRequest,
+    res: NextApiResponse
+  ): Promise<void> {
     const [rawBody] = await Promise.all([getRawBody(req), start(config)]);
     // https://stackoverflow.com/a/61732185
-    return new Promise(async (resolve, _reject) => {
-      const cachedProxy = new HttpProxy();
+    return new Promise(
+      async (resolve, _reject): Promise<void> => {
+        const cachedProxy = new HttpProxy();
 
-      cachedProxy.on('proxyReq', function(proxyReq) {
-        // https://gist.github.com/NickNaso/96aaad34e305823b9ff6ba3909908f31
-        // https://github.com/http-party/node-http-proxy/issues/1471#issuecomment-683484691
-        // https://github.com/http-party/node-http-proxy/issues/1279#issuecomment-429378935
-        // https://github.com/http-party/node-http-proxy/issues/1142#issuecomment-282810543
-        proxyReq.setHeader('content-length', Buffer.byteLength(rawBody));
-        proxyReq.write(rawBody);
-      });
+        cachedProxy.on('proxyReq', function(proxyReq) {
+          // https://gist.github.com/NickNaso/96aaad34e305823b9ff6ba3909908f31
+          // https://github.com/http-party/node-http-proxy/issues/1471#issuecomment-683484691
+          // https://github.com/http-party/node-http-proxy/issues/1279#issuecomment-429378935
+          // https://github.com/http-party/node-http-proxy/issues/1142#issuecomment-282810543
+          proxyReq.setHeader('content-length', Buffer.byteLength(rawBody));
+          proxyReq.write(rawBody);
+        });
 
-      cachedProxy.on('proxyRes', async function() {
-        // https://stackoverflow.com/a/56835387
-        if (!config.enableCache && cache) {
-          // close server
-          if (cachedServer) {
-            await new Promise((resolve, _reject) =>
-              cachedServer!.close(() => {
-                resolve();
-              })
-            );
+        cachedProxy.on('proxyRes', async function() {
+          // https://stackoverflow.com/a/56835387
+          if (!config.enableCache && cache) {
+            // close server
+            if (cachedServer) {
+              await new Promise((resolve, _reject) =>
+                cachedServer!.close(() => {
+                  resolve(undefined);
+                })
+              );
+            }
+            // call shutdown hooks
+            if (cachedAppType === 'NEST' && cachedApp) {
+              await (cachedApp as INestApplication).close();
+            }
+            // clear cache
+            cache = false;
+            cachedPort = undefined;
+            cachedApp = undefined;
+            cachedAppType = undefined;
+            cachedServer = undefined;
+            cachedServerAddress = undefined;
           }
-          // call shutdown hooks
-          if (cachedAppType === 'NEST' && cachedApp) {
-            await (cachedApp as INestApplication).close();
-          }
-          // clear cache
-          cache = false;
-          cachedPort = undefined;
-          cachedApp = undefined;
-          cachedAppType = undefined;
-          cachedServer = undefined;
-          cachedServerAddress = undefined;
+          resolve(undefined);
+        });
+
+        cachedProxy.on('error', function(error, _req, _res) {
+          console.log(error);
+          resolve(undefined);
+        });
+
+        if (config.NEST_PORT) {
+          await waitOn({
+            resources: [`tcp:${config.NEST_PORT}`],
+          });
         }
-        resolve();
-      });
 
-      cachedProxy.on('error', function(_error, _req, _res) {
-        console.log(_error);
-        resolve();
-      });
-
-      if (config.NEST_PORT) {
-        await waitOn({
-          resources: [`tcp:${config.NEST_PORT}`],
+        cachedProxy.web(req, res, {
+          target: cachedServerAddress,
         });
       }
-
-      cachedProxy.web(req, res, {
-        target: cachedServerAddress,
-      });
-    });
+    );
   };
 }
