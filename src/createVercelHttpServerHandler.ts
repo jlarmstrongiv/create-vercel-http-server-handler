@@ -86,9 +86,9 @@ export function createVercelHttpServerHandler(config: Config) {
             // close server
             if (cachedServer) {
               await new Promise(
-                async (resolve, reject): Promise<void> => {
+                async (resolve, _reject): Promise<void> => {
                   cachedServer!.close(error => {
-                    if (error) return reject(error);
+                    if (error) console.log(error);
                     return resolve(undefined);
                   });
                 }
