@@ -561,6 +561,7 @@ Edit your vercel.json file:
   "cleanUrls": true,
   "rewrites": [
     { "source": "/api/vercel", "destination": "/api/vercel" },
+    { "source": "/", "destination": "/api/vercel" },
     { "source": "/:match*", "destination": "/api/vercel" }
   ]
 }
@@ -580,13 +581,13 @@ export const config = {
 };
 ```
 
-Run `npx vercel` to setup and deploy your project.  Choose the defaults, except for the `Output Directory` option—select `dist`, where Nestjs compiles your code (otherwise you will have an infinite loop with `npx vercel dev`).  
+Run `npx vercel` to setup and deploy your project. Choose the defaults, except for the `Output Directory` option—select `dist`, where Nestjs compiles your code (otherwise you will have an infinite loop with `npx vercel dev`).
 
-To deploy to production, run `npx vercel --prod`.  Vercel handles all native dependencies for you automatically.
+To deploy to production, run `npx vercel --prod`. Vercel handles all native dependencies for you automatically.
 
 ### Footnotes
 
-† Please note that serverless in general does not scale well when directly connecting to a database like MongoDB or PostgreSQL.  Be sure you use [connection pools](https://www.digitalocean.com/docs/databases/postgresql/how-to/manage-connection-pools/#creating-a-connection-pool).
+† Please note that serverless in general does not scale well when directly connecting to a database like MongoDB or PostgreSQL. Be sure you use [connection pools](https://www.digitalocean.com/docs/databases/postgresql/how-to/manage-connection-pools/#creating-a-connection-pool).
 
 ## Thank you
 
