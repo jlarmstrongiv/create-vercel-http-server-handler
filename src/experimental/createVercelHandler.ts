@@ -68,7 +68,6 @@ export function createVercelHandler(
       getRawBody(req),
       start(bootstrapNestOptions),
     ]);
-    console.log(req.url);
     // API resolved without sending a response
     // https://stackoverflow.com/a/61732185
     return new Promise(
