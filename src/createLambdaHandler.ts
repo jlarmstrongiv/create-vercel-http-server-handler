@@ -8,7 +8,7 @@ import {
   ExpressAdapter,
   NestExpressApplication,
 } from '@nestjs/platform-express';
-import { BootstrapNestOptions } from './bootstrap';
+import { BootstrapOptions } from './bootstrap';
 import express from 'express';
 
 // NOTE: If you get ERR_CONTENT_DECODING_FAILED in your browser, this
@@ -47,7 +47,7 @@ async function bootstrapServer({
   AppModule,
   useGlobal,
   nestApplicationOptions,
-}: BootstrapNestOptions): Promise<Server> {
+}: BootstrapOptions): Promise<Server> {
   if (!cachedServer) {
     const expressApp = express();
     const nestApp = await NestFactory.create<NestExpressApplication>(
@@ -69,7 +69,7 @@ async function bootstrapServer({
 }
 
 export function createLambdaHandler(
-  bootstrapNestOptions: BootstrapNestOptions
+  bootstrapNestOptions: BootstrapOptions
 ): Handler {
   // Export the handler : the entry point of the Lambda function
   return async function Handler(event: any, context: Context) {

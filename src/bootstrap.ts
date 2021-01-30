@@ -22,7 +22,7 @@ export type UseGlobal = (
 
 export type Bootstrap = () => Promise<NestExpressApplication>;
 
-export interface BootstrapNestOptions {
+export interface BootstrapOptions {
   AppModule: AppModule;
   nestApplicationOptions?: NestApplicationOptions;
   useGlobal?: UseGlobal;

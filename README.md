@@ -6,19 +6,27 @@
 
 ### My Philosophy
 
-While there are cases where following Vercel’s approach is beneficial, I disagree wih entirely dismissing these frameworks. With frameworks like Express.js, I can:
+While there are cases where following Vercel’s approach is beneficial, I disagree with entirely dismissing these frameworks. With frameworks like Express.js and Nest.js, I can:
 
 - keep my application portable among hosting providers (**_No vendor locking_**)
 - take advantage of the enormouse ecosystem of existing packages, tools, and features built around these frameworks, without reinventing the wheel each time (**_DRY_**)
-- reference many resources to learn, build, and bugfix my application in a large community (**_many resources_**)
+- reference many resources to learn, build, and bug fix my application in a large community (**_many resources_**)
 
-The main drawback† is a slightly longer coldstart time when initializing the framework. This package caches your server so this delay will not be an issue in subsequent requests.
+The main drawback† is a slightly longer cold start time when initializing the framework and risking the 50MB limit. This package caches your server so this delay will not be an issue in subsequent requests.
 
-## Quickstart
+## Use cases
+
+This package has three main helper functions:
+
+- createNextHandler (expessjs and nestjs)
+- createVercelHandler (nestjs)
+- createLambdaHandler (nestjs)
+
+## Next.js
 
 ### Install
 
-This quickstart assumes you bootstraped your function with `npx create-next-app project-name`. However, this package should work with any [Zero Config Deployments](https://vercel.com/blog/zero-config).
+This quick start assumes you bootstrapped your function with `npx create-next-app project-name`. However, this package should work with any [Zero Config Deployments](https://vercel.com/blog/zero-config).
 
 Install this package via [npm](https://www.npmjs.com/package/create-vercel-http-server-handler),
 `npm install create-vercel-http-server-handler`
@@ -35,7 +43,7 @@ Inside your api folder, create a [catch all API route](https://nextjs.org/docs/a
 
 ```ts
 import {
-  createVercelHttpServerHandler,
+  createNextHandler,
   bootstrapExpress,
   bootstrapNest,
 } from 'create-vercel-http-server-handler';
@@ -46,7 +54,7 @@ Export default the handler helper for your framework of choice, and disable the 
 **Express.js**
 
 ```ts
-export default createVercelHttpServerHandler({
+export default createNextHandler({
   bootstrap: bootstrapExpress({ app }),
 });
 
@@ -92,13 +100,13 @@ Pass your `AppModule` and optional `useGlobal` function to the `bootstrapNest` h
 
 ```ts
 import {
-  createVercelHttpServerHandler,
+  createNextHandler,
   bootstrapNest,
 } from 'create-vercel-http-server-handler';
 import { AppModule } from '../../server/app/app.module';
 import { useGlobal, nestApplicationOptions } from '../../main';
 
-export default createVercelHttpServerHandler({
+export default createNextHandler({
   bootstrap: bootstrapNest({
     AppModule,
     useGlobal,
@@ -313,173 +321,272 @@ For additional configuration, read Vercel’s [docs](https://vercel.com/docs/con
 }
 ```
 
----
+### How it works
 
-**_That’s all folks! Feel free to check out the alternative guide below to learn about another implementation._**
-
----
-
-## How it works
-
-The first argument of `createVercelHttpServerHandler` is your bootstrap function. The second argument is `enableCache` to cache your server after startup. I recommend using `!!process.env.AWS_REGION` so that your server is cached on Vercel hosting, but will still hot reload properly locally.
+The first argument of `createNextHandler` is your bootstrap function. The second argument is `enableCache` to cache your server after startup. I recommend using `!!process.env.AWS_REGION` so that your server is cached on Vercel hosting, but will still hot reload properly locally.
 
 Internally, we call `http.createServer(expressApp)` and cache your server after calling `app.listen(port, () => { … });`. We proxy your server by forwarding all of Vercel’s requests via `node-http-proxy`. Essentially, we are running a server inside a serverless function.
 
-## Alternative
+## AWS Lambda
 
-If you would rather not use a proxy between your framework and Vercel, you can use their deprecated `@vercel/node` framework instead. This requires your server to be in a standalone project.
+### Install
 
-Vercel support has said:
+This QuickStart assumes you bootstrapped your function with `nest new project-name`. However, this package should work with any [Zero Config Deployments](https://vercel.com/blog/zero-config).
 
-> You cannot configure the memory and timeout of your functions if you are opting-out of "Zero Config".
+Install this package via [npm](https://www.npmjs.com/package/create-vercel-http-server-handler), `npm install create-vercel-http-server-handler`
 
-Vercel Pro Plan users can only use a function with:
+Be sure you have installed the dependencies of your framework in your project, as this package relies on them.
 
-- Memory Size 1024 MB
-- Timeout 60s
+For express, `npm install aws-serverless-express @nestjs/platform-express`
 
-Additional unofficial documentation is available [here](https://docs-git-add-config-reference.zeit.now.sh/docs/builders/builders-mdx/advanced/advanced#official-builders/node-js/node-js-request-and-response-objects).
+### TypeScript
 
-It is important to note that Vercel’s GitHub Deploy Hooks do not work with `@vercel/node` either, as packages will not be installed and build scripts will not run.
+Edit your `tsconfig.json` file:
 
-In this case, we will disable the GitHub integration and use a husky pre-push hook instead. It is also possible to use [GitHub Actions](https://carlosroso.com/how-to-deploy-a-monorepo-in-vercel/) to automatically deploy on git push.
+```json
+{
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
 
-### vercel.json
+    "module": "commonjs",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "es2017",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "incremental": true
+  }
+}
+```
 
-First, setup a `vercel.json` file in your project root:
+### Setup
+
+Inside your source folder, extract all your global app settings into `src/useGlobal.ts`:
+
+```tsx
+import helmet from 'helmet';
+import { UseGlobal } from 'create-vercel-http-server-handler';
+
+export const useGlobal: UseGlobal = async app => {
+  app.use(helmet());
+
+  // only exists in NestExpressApplication
+  if ('disable' in app) app.disable('x-powered-by');
+
+  return app;
+};
+```
+
+Refactor your `src/main.ts` to use the `useGlobal.ts` function:
+
+```tsx
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app/app.module';
+import { useGlobal } from './useGlobal';
+
+async function start() {
+  const app = await NestFactory.create(AppModule);
+  await useGlobal(app);
+  await app.listen(4000);
+}
+start();
+```
+
+Create your `src/lambda.ts` file:
+
+```tsx
+import { createLambdaHandler } from 'create-vercel-http-server-handler';
+import { AppModule } from './app/app.module';
+import { useGlobal } from './useGlobal';
+
+module.exports.handler = createLambdaHandler({
+  AppModule,
+  useGlobal,
+});
+```
+
+### Claudia.js
+
+We will deploy our function with Claudia.js. Be sure to follow their setup [instructions](https://claudiajs.com/tutorials/installing.html).
+
+Unfortunately, Claudia.js does not support native modules (which are c++ libraries built for specific NodeJS versions and operating systems), like sharp.js. We will adapt steps from this [guide](https://cuneyt.aliustaoglu.biz/en/using-docker-and-claudia-js-to-deploy-lambda-functions/) to script our own support. Be sure you have docker [installed](https://www.docker.com/get-started).
+
+#### Scripts
+
+Inside `project-name/scripts/claudia-create.sh`:
+
+```bash
+docker run -v $PWD:/claudia -v $HOME/.aws:/root/.aws --rm lambci/lambda:build-nodejs12.x /bin/bash -c "\
+cd /claudia
+rm -rf node_modules
+npm install
+npm run build
+npm run claudia-create
+"
+```
+
+Inside `project-name/scripts/claudia-update`:
+
+```bash
+docker run -v $PWD:/claudia -v $HOME/.aws:/root/.aws --rm lambci/lambda:build-nodejs12.x /bin/bash -c "\
+cd /claudia
+rm -rf node_modules
+npm install
+npm run build
+npm run claudia-update
+"
+```
+
+Make the scripts executable by running `chmod +x ./scripts/claudia-create.sh` and `chmod +x ./scripts/claudia-update.sh` in your terminal. You should only need to do this once.
+
+Add these scripts to your `package.json`:
+
+```json
+{
+  "claudia-create": "claudia create --handler dist/lambda.handler --deploy-proxy-api --region us-east-1 --timeout 29",
+  "claudia-update": "claudia update --timeout 29",
+  "create": "./scripts/claudia-create.sh",
+  "update": "./scripts/claudia-update.sh"
+}
+```
+
+To run Nest.js locally again, be sure to reinstall your dependencies with `npx rimraf node_modules` and `npm install`. You will need to do this after every deployment.
+
+Finally, you will need to add these fields to your `package.json` for Claudia.js to [behave](https://github.com/claudiajs/claudia/issues/132#issuecomment-364757470) correctly:
+
+```json
+{
+  "files": ["dist"],
+  "main": "lambda.js"
+}
+```
+
+## Vercel Serverless
+
+This QuickStart assumes you bootstrapped your function with `nest new project-name`. However, this package should work with any [Zero Config Deployments](https://vercel.com/blog/zero-config).
+
+Install this package via [npm](https://www.npmjs.com/package/create-vercel-http-server-handler), `npm install create-vercel-http-server-handler` and `npm install --save-dev vercel`
+
+### **TypeScript**
+
+Edit your `tsconfig.json` file:
+
+```json
+{
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+
+    "module": "commonjs",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "es2017",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "incremental": true
+  }
+}
+```
+
+### Setup
+
+Inside your source folder, extract all your global app settings into `src/useGlobal.ts`:
+
+```tsx
+import helmet from 'helmet';
+import { UseGlobal } from 'create-vercel-http-server-handler';
+
+export const useGlobal: UseGlobal = async app => {
+  app.use(helmet());
+
+  // only exists in NestExpressApplication
+  if ('disable' in app) app.disable('x-powered-by');
+
+  return app;
+};
+```
+
+Refactor your `src/main.ts` to use the `useGlobal.ts` function:
+
+```tsx
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app/app.module';
+import { useGlobal } from './useGlobal';
+
+async function start() {
+  const app = await NestFactory.create(AppModule);
+  await useGlobal(app);
+  await app.listen(4000);
+}
+start();
+```
+
+Create your `src/vercel.ts` file:
+
+```tsx
+import { createVercelHandler } from 'create-vercel-http-server-handler';
+import { AppModule } from './app/app.module';
+import { useGlobal } from './useGlobal';
+
+export default createVercelHandler({
+  AppModule,
+  useGlobal,
+});
+```
+
+### Vercel
+
+Edit your vercel.json file:
 
 ```json
 {
   "version": 2,
-  "github": {
-    "enabled": false
-  },
-  "builds": [
-    {
-      "src": "dist/lambda.js",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "dist/lambda.js"
-    }
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/api/vercel", "destination": "/api/vercel" },
+    { "source": "/:match*", "destination": "/api/vercel" }
   ]
 }
 ```
 
-The `builds[].src` and `routes[].dest` properties should be the file that runs the server.
+Add `project-name/api/vercel.js`:
 
-### lambda.js
+```jsx
+import Handler from '../dist/vercel';
 
-In this example, we are using `lambda.ts` as the file that runs the server. By using typescript, we introduce a build step. That is why we configured our file path to `dist/lambda.js` above.
+export default Handler;
 
-If you are using Express.js, your `lambda.ts` file would look like the [basic-starter](https://github.com/awslabs/aws-serverless-express/blob/master/examples/basic-starter/lambda.js) on [`aws-serverless-express`](https://www.npmjs.com/package/aws-serverless-express).
-
-If you are using Next.js, your `lambda.ts` would look similar, except with modifications like:
-
-```ts
-import { Handler, Context } from 'aws-lambda';
-import { Server } from 'http';
-import { createServer, proxy } from 'aws-serverless-express';
-import { eventContext } from 'aws-serverless-express/middleware';
-
-import { NestFactory } from '@nestjs/core';
-import { ExpressAdapter } from '@nestjs/platform-express';
-import { AppModule } from './app/app.module';
-import { useGlobal } from './main';
-
-// https://github.com/Microsoft/TypeScript/issues/13340
-import express = require('express');
-
-// NOTE: If you get ERR_CONTENT_DECODING_FAILED in your browser, this
-// is likely due to a compressed response (e.g. gzip) which has not
-// been handled correctly by aws-serverless-express and/or API
-// Gateway. Add the necessary MIME types to binaryMimeTypes below
-
-// https://github.com/awslabs/aws-serverless-express/blob/master/examples/basic-starter/lambda.js
-const binaryMimeTypes: string[] = [
-  'application/javascript',
-  'application/json',
-  'application/octet-stream',
-  'application/xml',
-  'font/eot',
-  'font/opentype',
-  'font/otf',
-  'image/jpeg',
-  'image/png',
-  'image/svg+xml',
-  'text/comma-separated-values',
-  'text/css',
-  'text/html',
-  'text/javascript',
-  'text/plain',
-  'text/text',
-  'text/xml',
-];
-
-let cachedServer: Server;
-
-// Create the Nest.js server and convert it into an Express.js server
-async function bootstrapServer(): Promise<Server> {
-  if (!cachedServer) {
-    const expressApp = express();
-    const nestApp = await NestFactory.create(
-      AppModule,
-      new ExpressAdapter(expressApp)
-    );
-    nestApp.use(eventContext());
-
-    // custom add global pipes, filters, interceptors, etc.
-    useGlobal(nestApp);
-
-    await nestApp.init();
-    cachedServer = createServer(expressApp, undefined, binaryMimeTypes);
-  }
-  return cachedServer;
-}
-
-// Export the handler : the entry point of the Lambda function
-export const handler: Handler = async (event: any, context: Context) => {
-  // https://medium.com/safara-engineering/wiring-up-typeorm-with-serverless-5cc29a18824f
-  context.callbackWaitsForEmptyEventLoop = false;
-  cachedServer = await bootstrapServer();
-  return proxy(cachedServer, event, context, 'PROMISE').promise;
+export const config = {
+  api: {
+    bodyParser: false,
+  },
 };
 ```
 
-### Build Step
+Run `npx vercel` to setup and deploy your project.  Choose the defaults, except for the `Output Directory` option—select `dist`, where Nestjs compiles your code (otherwise you will have an infinite loop with `npx vercel dev`).  
 
-In order for the build to run, we must make our own build step. We will use a husky pre-push hook. However, it is also possible to use [GitHub Actions](https://carlosroso.com/how-to-deploy-a-monorepo-in-vercel/) to automatically deploy on git push.
-
-To start, we will install these dependencies:
-
-`npm install --save-dev husky npm-run-all vercel`
-
-In our `package.json`, we will add our husky configuration and additional scripts:
-
-```json
-{
-  "scripts": {
-    "git": "git diff HEAD --quiet",
-    "deploy": "vercel --prod"
-  },
-  "husky": {
-    "hooks": {
-      "pre-push": "npm-run-all -s git build deploy"
-    }
-  }
-}
-```
-
-We expect your package to have a build script, but we recommend copying all your scripts from your framework for local development.
-
-Now, we can run our server on `@vercel/node` with automatic deployment.
+To deploy to production, run `npx vercel --prod`.  Vercel handles all native dependencies for you automatically.
 
 ### Footnotes
 
-† Please note that serverless in general does not scale well when directly connecting to a database like MongoDB or PostgreSQL. These databases have limited connection pools that are exhausted when many lambdas are spun up. Similar concerns can be said about realtime web sockets. You should probably avoid serverless in these use cases. Instead, take a look at alternative scalable hosting solutions like [Google App Engine](https://cloud.google.com/appengine) with [cluster](https://www.npmjs.com/package/cluster).
+† Please note that serverless in general does not scale well when directly connecting to a database like MongoDB or PostgreSQL.  Be sure you use [connection pools](https://www.digitalocean.com/docs/databases/postgresql/how-to/manage-connection-pools/#creating-a-connection-pool).
 
 ## Thank you
 

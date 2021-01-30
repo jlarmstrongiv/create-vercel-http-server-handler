@@ -57,7 +57,7 @@ const start = async (config: Config): Promise<void> => {
 };
 
 // currying, must be synchronous https://javascript.info/currying-partials
-export function createVercelHttpServerHandler(config: Config) {
+export function createNextHandler(config: Config) {
   config.enableCache ?? (config.enableCache = true);
 
   // https://vercel.com/docs/runtimes#official-runtimes/node-js/node-js-request-and-response-objects

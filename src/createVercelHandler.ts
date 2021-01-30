@@ -10,14 +10,14 @@ import getRawBody from 'raw-body';
 import getPort from 'get-port';
 import queryString from 'query-string';
 import { VercelApiHandler } from '@vercel/node';
-import { BootstrapNestOptions } from './bootstrap';
+import { BootstrapOptions } from './bootstrap';
 
 let cachedServer: Server;
 async function bootstrapServer({
   AppModule,
   useGlobal,
   nestApplicationOptions,
-}: BootstrapNestOptions): Promise<Server> {
+}: BootstrapOptions): Promise<Server> {
   if (!cachedServer) {
     const expressApp = express();
     const nestApp = await NestFactory.create<NestExpressApplication>(
@@ -39,9 +39,7 @@ async function bootstrapServer({
 
 let cachedServerAddress: string;
 let cachedServerListener: Server;
-async function start(
-  bootstrapNestOptions: BootstrapNestOptions
-): Promise<string> {
+async function start(bootstrapNestOptions: BootstrapOptions): Promise<string> {
   return new Promise(async (resolve, _reject) => {
     if (!cachedServerAddress) {
       const [port, server] = await Promise.all([
@@ -63,7 +61,7 @@ async function start(
 }
 
 export function createVercelHandler(
-  bootstrapNestOptions: BootstrapNestOptions
+  bootstrapNestOptions: BootstrapOptions
 ): VercelApiHandler {
   return async function handler(req, res): Promise<void> {
     const [rawBody, serverAddress] = await Promise.all([
