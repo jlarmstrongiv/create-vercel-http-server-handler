@@ -56,6 +56,8 @@ async function start(
           port;
         resolve(cachedServerAddress);
       });
+    } else {
+      resolve(cachedServerAddress);
     }
   });
 }
