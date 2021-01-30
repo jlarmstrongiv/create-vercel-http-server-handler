@@ -434,7 +434,7 @@ npm run claudia-create
 "
 ```
 
-Inside `project-name/scripts/claudia-update`:
+Inside `project-name/scripts/claudia-update.sh`:
 
 ```bash
 docker run -v $PWD:/claudia -v $HOME/.aws:/root/.aws --rm lambci/lambda:build-nodejs12.x /bin/bash -c "\
