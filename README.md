@@ -339,6 +339,8 @@ Be sure you have installed the dependencies of your framework in your project, a
 
 For express, `npm install aws-serverless-express @nestjs/platform-express`
 
+For claudia, `npm install claudia --save-dev`
+
 ### TypeScript
 
 Edit your `tsconfig.json` file:
@@ -373,11 +375,12 @@ Edit your `tsconfig.json` file:
 Inside your source folder, extract all your global app settings into `src/useGlobal.ts`:
 
 ```tsx
-import helmet from 'helmet';
+import helmet from 'helmet'; // npm i helmet
 import { UseGlobal } from 'create-vercel-http-server-handler';
 
 export const useGlobal: UseGlobal = async app => {
   app.use(helmet());
+  app.enableCors();
 
   // only exists in NestExpressApplication
   if ('disable' in app) app.disable('x-powered-by');
@@ -470,6 +473,37 @@ Finally, you will need to add these fields to your `package.json` for Claudia.js
 }
 ```
 
+or
+
+```json
+{
+  "main": "dist/lambda.js"
+}
+```
+
+#### Avoiding the 50MB limit
+
+No matter what, claudiajs will always [include](https://claudiajs.com/tutorials/packaging.html#dependent-libraries) your production dependencies in your `node_modules` folder. However, there are often [unnecessary files](https://web.archive.org/web/20191130051804/https://miro.medium.com/max/1916/1*DzW3ZKDzODwEawxzXSzimg.png) included with your package.
+
+To avoid hitting the 50MB limit, use a package to prune the `node_modules` folder using:
+
+- https://www.npmjs.com/package/modclean
+- https://www.npmjs.com/package/node-prune
+
+##### Modclean
+
+Run `npm install modclean --save-dev`
+
+Add a postinstall script to your `package.json`:
+
+```json
+{
+  "postinstall": "npx modclean -n default:caution --no-progress --run"
+}
+```
+
+Inside your docker scripts, add `npm set unsafe-perm true` before running any npm commands to fix the `cannot run in wd` error.
+
 ## Vercel Serverless
 
 This QuickStart assumes you bootstrapped your function with `nest new project-name`. However, this package should work with any [Zero Config Deployments](https://vercel.com/blog/zero-config).
@@ -510,11 +544,12 @@ Edit your `tsconfig.json` file:
 Inside your source folder, extract all your global app settings into `src/useGlobal.ts`:
 
 ```tsx
-import helmet from 'helmet';
+import helmet from 'helmet'; // npm i helmet
 import { UseGlobal } from 'create-vercel-http-server-handler';
 
 export const useGlobal: UseGlobal = async app => {
   app.use(helmet());
+  app.enableCors();
 
   // only exists in NestExpressApplication
   if ('disable' in app) app.disable('x-powered-by');
@@ -566,6 +601,8 @@ Edit your vercel.json file:
   ]
 }
 ```
+
+Note: the root path is a bit buggy. Switch the example `@Get()` to `@Get('/hello')` in `src/app/app.controller.ts` to demo.
 
 Add `project-name/api/vercel.js`:
 
