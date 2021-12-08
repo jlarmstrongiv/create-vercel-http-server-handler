@@ -54,7 +54,7 @@
   "dependencies": {
     "get-port": "^5.1.1",
     "http-proxy": "^1.18.1",
-    "raw-body": "^2.4.1",
+    "raw-body": "^2.4.2",
     "query-string": "^6.13.8",
     "wait-on": "^5.2.1"
   }
